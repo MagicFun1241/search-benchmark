@@ -28,16 +28,19 @@ export async function setupRedisLike(connection: Bun.RedisClient) {
   console.log('Redis setup complete');
 }
 
-let count = 0;
-
-export async function benchmarkRedis(connection: Bun.RedisClient, namePart: string) {
+export async function benchmarkRedis(namePart: string) {
   const query = `@fullName:"${namePart.replaceAll('*', '').replaceAll('.', '')}"`;
 
-  const result = await connection.send('FT.SEARCH', ['users', query, 'LIMIT', '0', '250']);
-
-  count = (result.length - 1) / 2;
+  const result = await redis.send('FT.SEARCH', ['users', query, 'LIMIT', '0', '250']);
 }
 
-export function getCount() {
-  return count;
+export async function benchmarkDragonfly(namePart: string) {
+  const query = `@fullName:"${namePart.replaceAll('*', '').replaceAll('.', '')}"`;
+
+  const result = await dragonfly.send('FT.SEARCH', ['users', query, 'LIMIT', '0', '250']);
+}
+
+
+export function getDragonflyCount() {
+  return 0;
 }

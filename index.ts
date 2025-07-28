@@ -1,5 +1,5 @@
 import { generateDataFile } from './generate';
-import { benchmarkRedis, getCount as getCountRedis, setupDragonfly, setupRedis } from './redis';
+import { benchmarkDragonfly, benchmarkRedis, setupDragonfly, setupRedis } from './redis';
 import { benchmarkParadedb, getCount as getCountParadedb, setupParadedb } from './paradedb';
 import { benchmarkMeilisearch, getCount as getCountMeilisearch, setupMeilisearch } from './meilisearch';
 import { benchmarkTypesense, getCount as getCountTypesense, setupTypesense } from './typesense';
@@ -14,7 +14,7 @@ console.log('Setting up providers...');
 
 const { names } = await generateDataFile();
 
-const enabledProviders = ['dragonfly', 'redis', 'paradedb', 'meilisearch', 'typesense'];
+const enabledProviders = ['dragonfly', 'redis'];
 const tasks = [
   enabledProviders.includes('dragonfly') && setupDragonfly(),
   enabledProviders.includes('redis') && setupRedis(),
@@ -122,6 +122,7 @@ async function performBenchmark(options: Options) {
     paradedb: benchmarkParadedb,
     meilisearch: benchmarkMeilisearch,
     redis: benchmarkRedis,
+    dragonfly: benchmarkDragonfly,
   }
 
   const results: Record<keyof typeof targets, BenchmarkResults> = Object.fromEntries(Object.keys(targets).map(name => [
@@ -190,11 +191,7 @@ for (let i = 0; i < 500_000; i++) {
 await performBenchmark({
   names: bmNames,
   workers: 64,
-})
-
-if (enabledProviders.includes('redis')) {
-  console.log('Redis', getCountRedis());
-}
+});
 
 if (enabledProviders.includes('paradedb')) {
   console.log('Paradedb', getCountParadedb());
