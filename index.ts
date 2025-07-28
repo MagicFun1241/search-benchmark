@@ -133,7 +133,7 @@ async function performBenchmark(options: Options) {
         count: 0,
         max: -Infinity,
         min: Infinity,
-        all: Array(options.names),
+        all: Array(options.names.length),
       },
       duration: 0
     }
