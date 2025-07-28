@@ -31,7 +31,7 @@ export async function setupTypesense() {
       id: String(item.id),
       full_name: item.fullName,
     })));
-  }, 1000);
+  }, 100000);
 }
 
 let count = 0;
