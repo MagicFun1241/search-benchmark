@@ -1,0 +1,41 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: search-benchmark
+    environment:
+      - POSTGRES_URL=postgres://postgres:postgres@paradedb:5432/testing
+    depends_on:
+      - redis
+      - paradedb
+      - meilisearch
+      - typesense
+    ports:
+      - 3000:3000
+
+  redis:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    ports:
+      - 6379:6379
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    environment:
+      - MEILI_MASTER_KEY=testing
+
+  typesense:
+    image: typesense/typesense:29.0
+    volumes:
+      - typesense-data:/data
+    command: '--data-dir /data --api-key=testing'
+
+  paradedb:
+    image: paradedb/paradedb:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=testing
+
+volumes:
+  typesense-data:
