@@ -14,7 +14,7 @@ console.log('Setting up providers...');
 
 const { names } = await generateDataFile();
 
-const enabledProviders = ['dragonfly', 'redis'];
+const enabledProviders = ['dragonfly', 'redis', 'paradedb', 'meilisearch', 'typesense'];
 const tasks = [
   enabledProviders.includes('dragonfly') && setupDragonfly(),
   enabledProviders.includes('redis') && setupRedis(),
@@ -74,7 +74,7 @@ async function performBenchmarkTarget(options: Options, results: BenchmarkResult
         const timeTaken = end - start;
         results.timePerRequest.sum += timeTaken;
         results.timePerRequest.count++;
-        results.timePerRequest.all[index] = timeTaken;
+        results.timePerRequest.all.push(timeTaken);
         results.timePerRequest.max = Math.max(results.timePerRequest.max, timeTaken);
         results.timePerRequest.min = Math.min(results.timePerRequest.min, timeTaken);
       } catch (e) {
@@ -133,7 +133,7 @@ async function performBenchmark(options: Options) {
         count: 0,
         max: -Infinity,
         min: Infinity,
-        all: Array(options.names.length),
+        all: [],
       },
       duration: 0
     }
@@ -150,6 +150,11 @@ async function performBenchmark(options: Options) {
 
   console.log('Benchmark results:');
   for (const [name, result] of Object.entries(results)) {
+    if (result.timePerRequest.count === 0) {
+      console.log(` ${name}: No requests processed`);
+      continue;
+    }
+    
     const avgTime = result.timePerRequest.sum / result.timePerRequest.count;
     const sorted = result.timePerRequest.all.sort((a, b) => a - b);
     const medianTime = sorted[Math.floor(result.timePerRequest.all.length / 2)]!;
