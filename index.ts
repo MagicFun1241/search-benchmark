@@ -1,12 +1,9 @@
 import { generateDataFile } from './generate';
-import { benchmarkDragonfly, benchmarkRedis, setupDragonfly, setupRedis } from './redis';
+
+import { benchmarkDragonflyOld, benchmarkDragonflyNew, benchmarkRedis, setupDragonflyOld, setupDragonflyNew, setupRedis, getRedisCount, getDragonflyOldCount, getDragonflyNewCount } from './redis';
 import { benchmarkParadedb, getCount as getCountParadedb, setupParadedb } from './paradedb';
 import { benchmarkMeilisearch, getCount as getCountMeilisearch, setupMeilisearch } from './meilisearch';
 import { benchmarkTypesense, getCount as getCountTypesense, setupTypesense } from './typesense';
-
-// const bench = new Bench({name: 'benchmark'});
-// bench.concurrency = 'task'
-// bench.threshold = 10
 
 console.log('Starting benchmark...');
 
@@ -14,9 +11,11 @@ console.log('Setting up providers...');
 
 const { names } = await generateDataFile();
 
-const enabledProviders = ['dragonfly', 'redis', 'paradedb', 'meilisearch', 'typesense'];
+const enabledProviders = ['redis', 'dragonfly_new', 'dragonfly_old', 'paradedb', 'meilisearch', 'typesense'];
+
 const tasks = [
-  enabledProviders.includes('dragonfly') && setupDragonfly(),
+  enabledProviders.includes('dragonfly_old') && setupDragonflyOld(),
+  enabledProviders.includes('dragonfly_new') && setupDragonflyNew(),
   enabledProviders.includes('redis') && setupRedis(),
   enabledProviders.includes('paradedb') && setupParadedb(),
   enabledProviders.includes('meilisearch') && setupMeilisearch(),
@@ -41,6 +40,7 @@ type Options = {
 
 type BenchmarkResults = {
   errors: number,
+  errorDetails: string[],
   timePerRequest: {
     sum: number,
     count: number,
@@ -62,7 +62,6 @@ async function performBenchmarkTarget(options: Options, results: BenchmarkResult
       const index = state.index++;
       const name = options.names[index];
       if (!name) {
-        console.log("Worker exited")
         return;
       }
 
@@ -79,6 +78,8 @@ async function performBenchmarkTarget(options: Options, results: BenchmarkResult
         results.timePerRequest.min = Math.min(results.timePerRequest.min, timeTaken);
       } catch (e) {
         results.errors++;
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        results.errorDetails.push(`Request ${index} (name: "${name}"): ${errorMessage}`);
       }
     }
   }
@@ -122,12 +123,15 @@ async function performBenchmark(options: Options) {
     paradedb: benchmarkParadedb,
     meilisearch: benchmarkMeilisearch,
     redis: benchmarkRedis,
-    dragonfly: benchmarkDragonfly,
+    dragonfly_old: benchmarkDragonflyOld,
+    dragonfly_new: benchmarkDragonflyNew,
   }
 
   const results: Record<keyof typeof targets, BenchmarkResults> = Object.fromEntries(Object.keys(targets).map(name => [
     name,
     {
+      errors: 0,
+      errorDetails: [],
       timePerRequest: {
         sum: 0,
         count: 0,
@@ -147,6 +151,8 @@ async function performBenchmark(options: Options) {
     // @ts-ignore
     results[name] = await performBenchmarkTarget(options, results[name], target);
   }
+
+  console.clear();
 
   console.log('Benchmark results:');
   for (const [name, result] of Object.entries(results)) {
@@ -174,13 +180,34 @@ async function performBenchmark(options: Options) {
     console.log(`  Duration: ${result.duration} ms`);
     console.log(`  Requests per second: ${(result.timePerRequest.count / (result.duration / 1000)).toFixed(2)}`);
     console.log(`  Errors: ${result.errors}`);
+    if (result.errors > 0 && result.errorDetails.length > 0) {
+      console.log(`  Error details:`);
+      result.errorDetails.forEach(error => console.log(`    - ${error}`));
+    }
+    
+    // Display total items found for each provider
+    if (name === 'redis') {
+      console.log(`  Total items found: ${getRedisCount()}`);
+    } else if (name === 'dragonfly_old') {
+      console.log(`  Total items found: ${getDragonflyOldCount()}`);
+    } else if (name === 'dragonfly_new') {
+      console.log(`  Total items found: ${getDragonflyNewCount()}`);
+    } else if (name === 'paradedb') {
+      console.log(`  Total items found: ${getCountParadedb()}`);
+    } else if (name === 'meilisearch') {
+      console.log(`  Total items found: ${getCountMeilisearch()}`);
+    } else if (name === 'typesense') {
+      console.log(`  Total items found: ${getCountTypesense()}`);
+    }
   }
 }
 
 console.log(`Generating benchmark names... (${names.length})`);
 
+const totalNames = 500_000;
+
 const bmNames = []
-for (let i = 0; i < 500_000; i++) {
+for (let i = 0; i < totalNames; i++) {
   if (Math.random() < 0.1) {
     bmNames.push(generateRandomId(5 + Math.random() * 64));
   } else {
@@ -197,15 +224,3 @@ await performBenchmark({
   names: bmNames,
   workers: 64,
 });
-
-if (enabledProviders.includes('paradedb')) {
-  console.log('Paradedb', getCountParadedb());
-}
-
-if (enabledProviders.includes('meilisearch')) {
-  console.log('Meilisearch', getCountMeilisearch());
-}
-
-if (enabledProviders.includes('typesense')) {
-  console.log('Typesense', getCountTypesense());
-}

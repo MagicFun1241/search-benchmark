@@ -8,18 +8,20 @@ services:
       - POSTGRES_URL=postgres://postgres:postgres@paradedb:5432/testing
     depends_on:
       - redis
-      - dragonfly
+      - dragonfly_old
+      - dragonfly_new
       - paradedb
       - meilisearch
       - typesense
-    ports:
-      - 3000:3000
 
-  dragonfly:
-    image: docker.dragonflydb.io/dragonflydb/dragonfly
+  dragonfly_old:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.31.2
+  
+  dragonfly_new:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.32.0
   
   redis:
-    image: redis:latest
+    image: redis:8.0-bookworm
 
   meilisearch:
     image: getmeili/meilisearch:v1.15

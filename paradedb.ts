@@ -1,5 +1,5 @@
-import {sql} from 'bun';
-import {readDataFile} from './generate';
+import { sql } from 'bun';
+import { readDataFile } from './generate';
 
 export async function setupParadedb() {
     console.log('Setting up paradedb...');
@@ -15,7 +15,7 @@ export async function setupParadedb() {
 
     console.log('Inserting data...');
     await readDataFile(async (items) => {
-        await sql`INSERT INTO users ${sql(items.map((item) => ({id: item.id, full_name: item.fullName})))}`;
+        await sql`INSERT INTO users ${sql(items.map((item) => ({ id: item.id, full_name: item.fullName })))}`;
     }, 1000);
 
     console.log('Creating index...');
@@ -35,7 +35,7 @@ export async function benchmarkParadedb(namePart: string) {
                              FROM users
                              WHERE full_name @@@ ${namePart} LIMIT 250`;
 
-    count = result.length;
+    count += result.length;
 }
 
 export function getCount() {
