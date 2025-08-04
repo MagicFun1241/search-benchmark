@@ -118,10 +118,6 @@ export async function readDataFile(
                 if (currentBatch.length >= batchSize) {
                     await callback(currentBatch, index - currentBatch.length + 1);
 
-                    if (index % 10000 === 0) {
-                        console.log(`Processed ${index} users`);
-                    }
-
                     currentBatch = [];
                 }
             } catch (error) {
