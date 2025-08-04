@@ -43,7 +43,7 @@ export async function benchmarkTypesense(namePart: string) {
     limit: 250,
   });
 
-  count = result.hits?.length ?? 0;
+  count += result.hits?.length ?? 0;
 }
 
 export function getCount() {

@@ -24,7 +24,7 @@ const index = client.index('users');
 export async function benchmarkMeilisearch(namePart: string) {
     const result = await index.search(namePart, {limit: 250});
 
-    count = result.hits.length;
+    count += result.hits.length;
 }
 
 export function getCount() {
