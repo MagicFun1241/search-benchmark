@@ -4,6 +4,7 @@ import { benchmarkDragonflyOld, benchmarkDragonflyNew, benchmarkRedis, setupDrag
 import { benchmarkParadedb, getCount as getCountParadedb, setupParadedb } from './paradedb';
 import { benchmarkMeilisearch, getCount as getCountMeilisearch, setupMeilisearch } from './meilisearch';
 import { benchmarkTypesense, getCount as getCountTypesense, setupTypesense } from './typesense';
+import { benchmarkElasticsearch, getCount as getCountElasticsearch, setupElasticsearch } from './elasticsearch';
 
 console.log('Starting benchmark...');
 
@@ -11,7 +12,8 @@ console.log('Setting up providers...');
 
 const { names } = await generateDataFile();
 
-const enabledProviders = ['redis', 'dragonfly_new', 'dragonfly_old', 'paradedb', 'meilisearch', 'typesense'];
+const enabledProviders = ['redis', 'dragonfly_new', 'dragonfly_old', 'paradedb', 'meilisearch', 'typesense', 'elasticsearch'];
+// const enabledProviders = ['elasticsearch'];
 
 const tasks = [
   enabledProviders.includes('dragonfly_old') && setupDragonflyOld(),
@@ -20,6 +22,7 @@ const tasks = [
   enabledProviders.includes('paradedb') && setupParadedb(),
   enabledProviders.includes('meilisearch') && setupMeilisearch(),
   enabledProviders.includes('typesense') && setupTypesense(),
+  enabledProviders.includes('elasticsearch') && setupElasticsearch(),
 ].filter(Boolean)
 
 await Promise.all(tasks)
@@ -113,7 +116,6 @@ async function performBenchmarkTarget(options: Options, results: BenchmarkResult
   return results
 }
 
-
 async function performBenchmark(options: Options) {
   const { workers } = options;
   console.log(` Benchmarking: workers=${workers}`);
@@ -125,6 +127,7 @@ async function performBenchmark(options: Options) {
     redis: benchmarkRedis,
     dragonfly_old: benchmarkDragonflyOld,
     dragonfly_new: benchmarkDragonflyNew,
+    elasticsearch: benchmarkElasticsearch,
   }
 
   const results: Record<keyof typeof targets, BenchmarkResults> = Object.fromEntries(Object.keys(targets).map(name => [
@@ -198,6 +201,8 @@ async function performBenchmark(options: Options) {
       console.log(`  Total items found: ${getCountMeilisearch()}`);
     } else if (name === 'typesense') {
       console.log(`  Total items found: ${getCountTypesense()}`);
+    } else if (name === 'elasticsearch') {
+      console.log(`  Total items found: ${getCountElasticsearch()}`);
     }
   }
 }

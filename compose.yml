@@ -13,6 +13,7 @@ services:
       - paradedb
       - meilisearch
       - typesense
+      - elasticsearch
 
   dragonfly_old:
     image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.31.2
@@ -41,5 +42,11 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=testing
 
+  elasticsearch:
+    image: docker.io/bitnami/elasticsearch:9
+    volumes:
+      - 'elasticsearch-data:/bitnami/elasticsearch/data'
+
 volumes:
   typesense-data:
+  elasticsearch-data:
