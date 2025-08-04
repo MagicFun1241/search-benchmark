@@ -1,6 +1,8 @@
 import { Client, HttpConnection } from '@elastic/elasticsearch';
 import { readDataFile } from './generate';
 
+import { retry } from 'es-toolkit';
+
 import { sleep } from 'bun';
 
 // Initialize Elasticsearch client
@@ -67,19 +69,18 @@ let count = 0;
 
 export async function benchmarkElasticsearch(namePart: string) {
   try {
-    const result = await client.search({
+    const result = await retry(() => client.search({
       index: INDEX_NAME,
       query: {
         match: {
           fullName: namePart
         }
       },
-      size: 250
-    });
+      size: 250,
+    }), 6);
 
     count += result.hits.hits.length;
   } catch (error) {
-    console.error('Elasticsearch search error:', error);
     throw error;
   }
 }
